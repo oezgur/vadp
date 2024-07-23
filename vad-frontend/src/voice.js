@@ -41,7 +41,7 @@ function Voice() {
     formData.append('audio', audioBlob, 'audio.wav');
     
     try {
-      const response = await axios.post('http://127.0.0.1:8000', formData, {
+      const response = await axios.post('http://127.0.0.1:8000/', formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
