@@ -34,7 +34,7 @@ async def root(audio: UploadFile = File(...)):
         os.remove(temp_path)  # Clean up temp file
     
     # Perform VAD on the WAV file
-    vad = webrtcvad.Vad(3)  # VAD aggressiveness level (0-3)
+    vad = webrtcvad.Vad(1)  # VAD aggressiveness level (0-3)
     
     with open(wav_path, 'rb') as wf:
         audio_data = wf.read()
@@ -61,7 +61,7 @@ async def root(audio: UploadFile = File(...)):
         vad_result = "No significant speech detected"
     
     # Clean up WAV file
-    os.remove(wav_path)
+    #os.remove(wav_path)
     
     return JSONResponse(content={
         "message": f"Audio processed successfully",

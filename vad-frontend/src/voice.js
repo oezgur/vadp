@@ -57,7 +57,13 @@ function Voice() {
       <button onClick={!isListening ? startListening : stopListening}>
         {!isListening ? 'Start Listening' : 'Stop Listening'}
       </button>
-      {response && <p>Response: {response.message}</p>}
+      {response && (
+        <div>
+          <p>Response: {response.message}</p>
+          <p>VAD Result: {response.vad_result}</p>
+          <p>Speech Percentage: {response.speech_percentage}</p>
+        </div>
+      )}
     </div>
   );
 }
