@@ -7,10 +7,17 @@ from fastapi.responses import JSONResponse
 from pydub import AudioSegment
 import io
 import os
+from silero_vad import load_silero_vad, read_audio, get_speech_timestamps
+import logging
+import json
 
 app = FastAPI()
 origins = ["http://localhost:3000"]
 app.add_middleware(CORSMiddleware, allow_origins=origins, allow_credentials=True, allow_methods=["*"], allow_headers=["*"])
+
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 @app.post("/")
 async def root(audio: UploadFile = File(...)):
@@ -33,40 +40,16 @@ async def root(audio: UploadFile = File(...)):
     finally:
         os.remove(temp_path)  # Clean up temp file
     
-    # Perform VAD on the WAV file
-    vad = webrtcvad.Vad(1)  # VAD aggressiveness level (0-3)
-    
-    with open(wav_path, 'rb') as wf:
-        audio_data = wf.read()
-    
-    # Process the audio in 30ms chunks
-    chunk_duration = 30  # duration in milliseconds
-    sample_rate = 16000
-    chunk_size = int(sample_rate * chunk_duration / 1000) * 2  # chunk size in bytes (16-bit audio)
-    
-    total_chunks = len(audio_data) // chunk_size
-    speech_chunks = 0
-    
-    for i in range(0, total_chunks):
-        chunk = audio_data[i*chunk_size:(i+1)*chunk_size]
-        is_speech = vad.is_speech(chunk, sample_rate)
-        if is_speech:
-            speech_chunks += 1
-    
-    speech_percentage = (speech_chunks / total_chunks) * 100 if total_chunks > 0 else 0
-    
-    if speech_percentage > 50:
-        vad_result = "Significant speech detected"
-    else:
-        vad_result = "No significant speech detected"
-    
-    # Clean up WAV file
-    #os.remove(wav_path)
-    
+    model = load_silero_vad()
+    wav = read_audio(wav_path) # backend (sox, soundfile, or ffmpeg) required!
+    speech_timestamps = get_speech_timestamps(wav, model)
+
+    logger.info(f"Speech timestamps: {speech_timestamps}")
+    speech_timestamps = json.dumps(speech_timestamps)
+
     return JSONResponse(content={
         "message": f"Audio processed successfully",
-        "vad_result": vad_result,
-        "speech_percentage": f"{speech_percentage:.2f}%"
+        "vad_result": speech_timestamps
     })
 
 if __name__ == "__main__":
